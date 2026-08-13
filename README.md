@@ -140,7 +140,7 @@ transaction mode cannot hold them between queries.
 | `DATABASE_URL` | the pooled Neon string |
 | `AUTH_SECRET` | `openssl rand -base64 32` |
 | `APP_URL` | `https://your-domain` — without it, approve links in digests point at localhost |
-| `CRON_SECRET` | Vercel generates this; the `/api/cron/*` routes refuse to run without it |
+| `CRON_SECRET` | you set it (`openssl rand -hex 32`); Vercel then sends it as a Bearer token on every scheduled call. The `/api/cron/*` routes refuse to run without it |
 
 Optional: `PERPLEXITY_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and the
 `EMAIL_SERVER_*` set. Without them the deployment still works and labels itself
@@ -160,6 +160,11 @@ DATABASE_URL='<pooled neon string>' npm run seed   # optional demo data
 | `/api/cron/run-queue` | every 5 min | processes one queued run, reclaims dead ones, prunes rate limits |
 | `/api/cron/digest` | hourly | sends digests that are due, and immediate drop alerts |
 | `/api/cron/verify` | daily 06:30 | re-checks every action whose 14 days have elapsed |
+
+> Vercel's Hobby plan allows **2 cron jobs, once per day**. These schedules need
+> Pro. On Hobby, either trim `vercel.json` to a single daily job or drive the
+> same endpoints from an external scheduler — they are plain authenticated GETs,
+> so GitHub Actions or cron-job.org work identically.
 
 ### Why runs are queued rather than run inline
 
