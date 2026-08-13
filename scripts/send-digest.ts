@@ -1,5 +1,5 @@
 import "../lib/env";
-import { client } from "../lib/db";
+import { closeDb } from "../lib/db";
 import { detectChanges } from "../lib/agent/changes";
 import { buildDigest, digestTargets, isDue, markSent } from "../lib/email/digest";
 import { sendMail } from "../lib/email/send";
@@ -77,4 +77,4 @@ main()
     console.error(error);
     process.exitCode = 1;
   })
-  .finally(() => client.end());
+  .finally(() => closeDb());

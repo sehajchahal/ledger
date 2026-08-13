@@ -7,15 +7,14 @@ import { db } from "@/lib/db";
 import { runs } from "@/lib/db/schema";
 import { requireCapability } from "@/lib/auth/session";
 import { checkRunAllowance } from "@/lib/limits";
-import { runProbe } from "@/lib/probe/run";
 
 /**
- * Enqueues a run and returns immediately.
+ * Enqueues a run. It does not execute one.
  *
- * The row is written as `queued` before the response so the page can render the
- * amber running indicator on the very next paint. The probes themselves happen
- * in `after()`, once the response is flushed — a real run is 75 model calls and
- * has no business blocking a form submission.
+ * A full run is 75+ model calls, which outlives any serverless function, so the
+ * work is genuinely queued: this writes a `queued` row and the cron worker at
+ * /api/cron/run-queue picks it up. The UI shows the amber running indicator
+ * from that row immediately, so the wait is visible rather than silent.
  */
 export async function enqueueRun(brandId: string) {
   try {
@@ -44,14 +43,16 @@ export async function enqueueRun(brandId: string) {
 
   revalidatePath(`/brands/${brandId}`, "layout");
 
-  after(async () => {
-    try {
-      await runProbe(brandId, { existingRunId: run.id });
-    } catch (error) {
-      console.error(`run ${run.id} failed`, error);
-      await db.update(runs).set({ status: "failed", completedAt: new Date() }).where(eq(runs.id, run.id));
-    }
-  });
+  // Locally there is no cron, so drain the queue in the background to keep the
+  // button behaving the way it does in production. On a hosted deployment the
+  // scheduled worker owns this, and doing it here as well would run the probes
+  // twice.
+  if (!process.env.VERCEL) {
+    after(async () => {
+      const { drainRunQueue } = await import("@/lib/probe/queue");
+      await drainRunQueue({ limit: 1 });
+    });
+  }
 
   return { ok: true as const, runId: run.id };
 }

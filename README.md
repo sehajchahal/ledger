@@ -90,7 +90,7 @@ npm run digest -- --dry      # build digests and print them, send nothing
 npm run digest               # send what is due
 ```
 
-`npm run verify` and `npm run digest` are the two things to put on a schedule.
+On a deployment these run from `/api/cron/*` instead — see Deploying below.
 
 ## How it fits together
 
@@ -123,10 +123,60 @@ npm run build
 The parser is the part that must be tested — it is the foundation every number
 rests on. UI is verified by running it.
 
+## Deploying (Vercel + Neon)
+
+The build does not need a database — the connection is created on first query,
+not on import — so these can be done in any order.
+
+**1. Provision Postgres.** Create a Neon project and copy the **pooled**
+connection string (the host contains `-pooler`). Prepared statements are
+disabled automatically when a pooled URL is detected, because PgBouncer in
+transaction mode cannot hold them between queries.
+
+**2. Set environment variables** in the Vercel project:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | the pooled Neon string |
+| `AUTH_SECRET` | `openssl rand -base64 32` |
+| `APP_URL` | `https://your-domain` — without it, approve links in digests point at localhost |
+| `CRON_SECRET` | Vercel generates this; the `/api/cron/*` routes refuse to run without it |
+
+Optional: `PERPLEXITY_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, and the
+`EMAIL_SERVER_*` set. Without them the deployment still works and labels itself
+as demo data.
+
+**3. Run migrations against the cloud database:**
+
+```bash
+DATABASE_URL='<pooled neon string>' npx drizzle-kit migrate
+DATABASE_URL='<pooled neon string>' npm run seed   # optional demo data
+```
+
+**4. Deploy.** `vercel.json` registers three schedules:
+
+| Route | Schedule | Does |
+|---|---|---|
+| `/api/cron/run-queue` | every 5 min | processes one queued run, reclaims dead ones, prunes rate limits |
+| `/api/cron/digest` | hourly | sends digests that are due, and immediate drop alerts |
+| `/api/cron/verify` | daily 06:30 | re-checks every action whose 14 days have elapsed |
+
+### Why runs are queued rather than run inline
+
+A full run is 75+ model calls and outlives any serverless function. "Run checks
+now" writes a `queued` row and returns; the cron worker claims it with
+`FOR UPDATE SKIP LOCKED` so two firings cannot probe the same run twice, and a
+run left `running` for more than 15 minutes — a killed function — is reclaimed
+and retried. Locally there is no cron, so the same drain runs in the background
+after the request, which keeps the button behaving identically in both places.
+
 ## Operations
 
 - `GET /api/health` — returns 503 if the database is unreachable, and reports
   whether this instance is measuring or running on fixtures.
 - `POST /api/check` — the public brand check. Rate limited to 5 per IP per hour,
-  in memory. Move that counter to a shared store before running more than one
-  instance.
+  counted in Postgres so the limit holds across instances. Fails open: if the
+  database is unreachable the request is allowed, because this is a spend
+  control and not an authorisation check.
+- `/api/cron/*` — require `Authorization: Bearer $CRON_SECRET`. With no secret
+  set they return 503 rather than running unauthenticated.

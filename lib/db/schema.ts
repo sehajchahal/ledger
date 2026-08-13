@@ -354,6 +354,26 @@ export const auditLog = pgTable(
   ],
 );
 
+/**
+ * Rate limit counters.
+ *
+ * The public check has to be limited by IP, and an in-process Map cannot do
+ * that on a platform where every request may land in a fresh instance — it
+ * would reset constantly and limit nothing. Postgres is already here and is
+ * consistent across instances, which is the property that actually matters.
+ */
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    /** Bucket key, e.g. `check:203.0.113.4`. */
+    key: text("key").primaryKey(),
+    count: integer("count").notNull().default(0),
+    /** When the current window ends and the count resets. */
+    resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("rate_limits_reset_at_idx").on(t.resetAt)],
+);
+
 /* ---------------------------------------------------------------- types -- */
 
 export type Organization = typeof organizations.$inferSelect;

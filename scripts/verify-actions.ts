@@ -1,5 +1,5 @@
 import "../lib/env";
-import { client } from "../lib/db";
+import { closeDb } from "../lib/db";
 import { runDueVerifications } from "../lib/actions/verify";
 
 /**
@@ -35,4 +35,4 @@ main()
     console.error(error);
     process.exitCode = 1;
   })
-  .finally(() => client.end());
+  .finally(() => closeDb());

@@ -13,7 +13,10 @@ const LIMIT = 5;
 const WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: Request) {
-  const limit = rateLimit(`check:${clientIp(request)}`, { limit: LIMIT, windowMs: WINDOW_MS });
+  const limit = await rateLimit(`check:${clientIp(request)}`, {
+    limit: LIMIT,
+    windowMs: WINDOW_MS,
+  });
 
   if (!limit.allowed) {
     return Response.json(

@@ -1,7 +1,7 @@
 import "../lib/env";
 import { PROBE_ENGINES } from "../config/models";
 import { activeProbeEngine } from "../lib/ai/router";
-import { client } from "../lib/db";
+import { closeDb } from "../lib/db";
 import { runProbe } from "../lib/probe/run";
 
 /**
@@ -56,4 +56,4 @@ main()
     console.error(error);
     process.exitCode = 1;
   })
-  .finally(() => client.end());
+  .finally(() => closeDb());

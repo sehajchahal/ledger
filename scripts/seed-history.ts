@@ -1,6 +1,6 @@
 import "../lib/env";
 import { desc, eq } from "drizzle-orm";
-import { client, db } from "../lib/db";
+import { closeDb, db } from "../lib/db";
 import { brands, runs } from "../lib/db/schema";
 import { runProbe } from "../lib/probe/run";
 
@@ -47,4 +47,4 @@ main()
     console.error(error);
     process.exitCode = 1;
   })
-  .finally(() => client.end());
+  .finally(() => closeDb());

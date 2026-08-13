@@ -1,6 +1,6 @@
 import "../lib/env";
 import { and, desc, eq } from "drizzle-orm";
-import { client, db } from "../lib/db";
+import { closeDb, db } from "../lib/db";
 import { mentions, runs, answers } from "../lib/db/schema";
 import { parseRun } from "../lib/parse/mentions";
 import { citedDomains, shareOfVoice, visibilityScore } from "../lib/parse/metrics";
@@ -37,4 +37,4 @@ async function main() {
   for (const d of (await citedDomains(run.id)).slice(0, 6))
     console.log(`  ${d.domain.padEnd(28)} ${String(d.count).padStart(3)}${d.isOwnDomain ? "  (own domain)" : ""}`);
 }
-main().catch((e) => { console.error(e); process.exitCode = 1; }).finally(() => client.end());
+main().catch((e) => { console.error(e); process.exitCode = 1; }).finally(() => closeDb());

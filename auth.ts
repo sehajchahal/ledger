@@ -1,7 +1,7 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import NextAuth from "next-auth";
 import Nodemailer from "next-auth/providers/nodemailer";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { accounts, sessions, users, verificationTokens } from "@/lib/db/schema";
 
 /**
@@ -15,13 +15,28 @@ import { accounts, sessions, users, verificationTokens } from "@/lib/db/schema";
 
 const hasSmtp = Boolean(process.env.EMAIL_SERVER_HOST && process.env.EMAIL_FROM);
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DrizzleAdapter(db, {
+/**
+ * Built once, on first request rather than on import.
+ *
+ * DrizzleAdapter reads the database object to detect its dialect, so it needs a
+ * real connection — and `next build` imports this module while collecting route
+ * config, on a machine with no database. Deferring construction keeps the build
+ * independent of infrastructure.
+ */
+let adapter: ReturnType<typeof DrizzleAdapter> | undefined;
+
+function drizzleAdapter() {
+  adapter ??= DrizzleAdapter(getDb(), {
     usersTable: users,
     accountsTable: accounts,
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
-  }),
+  });
+  return adapter;
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
+  adapter: drizzleAdapter(),
   session: { strategy: "database" },
   pages: { signIn: "/signin", verifyRequest: "/signin/check" },
   providers: [
@@ -76,4 +91,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-});
+}));
