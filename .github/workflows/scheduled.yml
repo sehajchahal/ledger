@@ -1,0 +1,68 @@
+name: Scheduled jobs
+
+# Ledger's scheduled work runs from here rather than from vercel.json, because
+# Vercel's Hobby plan allows two cron jobs at daily frequency and the run queue
+# needs to be drained every few minutes to feel responsive.
+#
+# These are plain authenticated GETs, so nothing here is Vercel-specific. On the
+# Pro plan you can move them into vercel.json instead — see the README.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   APP_URL      https://your-deployment.vercel.app   (no trailing slash)
+#   CRON_SECRET  the same value set in the Vercel project
+
+on:
+  schedule:
+    # Drain the run queue. GitHub's minimum interval is 5 minutes, and it is
+    # best-effort — under load a firing can be late or skipped, which is fine
+    # here because a queued run simply waits for the next one.
+    - cron: "*/5 * * * *"
+    # Digests: hourly, so "alert me immediately" means within the hour.
+    - cron: "0 * * * *"
+    # Verification: once a day is the right cadence for a 14-day window.
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Which job to run now
+        required: true
+        default: run-queue
+        type: choice
+        options: [run-queue, digest, verify]
+
+concurrency:
+  # Never let two drains overlap. The worker claims rows with SKIP LOCKED so it
+  # would be safe, but overlapping runs waste minutes for no benefit.
+  group: ledger-scheduled
+  cancel-in-progress: false
+
+jobs:
+  run-queue:
+    if: github.event.schedule == '*/5 * * * *' || inputs.job == 'run-queue'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Drain the run queue
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 300 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/run-queue"
+
+  digest:
+    if: github.event.schedule == '0 * * * *' || inputs.job == 'digest'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send digests that are due
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 300 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/digest"
+
+  verify:
+    if: github.event.schedule == '30 6 * * *' || inputs.job == 'verify'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run due verifications
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 300 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/verify"

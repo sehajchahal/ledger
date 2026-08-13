@@ -153,7 +153,12 @@ DATABASE_URL='<pooled neon string>' npx drizzle-kit migrate
 DATABASE_URL='<pooled neon string>' npm run seed   # optional demo data
 ```
 
-**4. Deploy.** `vercel.json` registers three schedules:
+**4. Deploy.**
+
+**5. Set up the schedules.** Ledger has three recurring jobs. They are plain
+authenticated GETs, so anything that can make an HTTP request on a timer will
+do — `.github/workflows/scheduled.yml` drives them from GitHub Actions, which
+is free and works on any Vercel plan.
 
 | Route | Schedule | Does |
 |---|---|---|
@@ -161,10 +166,43 @@ DATABASE_URL='<pooled neon string>' npm run seed   # optional demo data
 | `/api/cron/digest` | hourly | sends digests that are due, and immediate drop alerts |
 | `/api/cron/verify` | daily 06:30 | re-checks every action whose 14 days have elapsed |
 
-> Vercel's Hobby plan allows **2 cron jobs, once per day**. These schedules need
-> Pro. On Hobby, either trim `vercel.json` to a single daily job or drive the
-> same endpoints from an external scheduler — they are plain authenticated GETs,
-> so GitHub Actions or cron-job.org work identically.
+Add two repository secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `APP_URL` | `https://your-deployment.vercel.app`, no trailing slash |
+| `CRON_SECRET` | the same value set in the Vercel project |
+
+Then run one by hand to check the wiring: **Actions → Scheduled jobs → Run
+workflow → verify**.
+
+Two caveats worth knowing: GitHub's minimum interval is 5 minutes and firings
+are best-effort, so a queued run can occasionally wait a little longer than
+expected. And scheduled workflows are disabled automatically after 60 days with
+no repository activity.
+
+<details>
+<summary>Using Vercel Cron instead (Pro plan)</summary>
+
+Vercel's Hobby plan allows two cron jobs at daily frequency, which the run queue
+cannot work within. On Pro, delete `.github/workflows/scheduled.yml` and put the
+schedules in `vercel.json`:
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/run-queue", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/digest", "schedule": "0 * * * *" },
+    { "path": "/api/cron/verify", "schedule": "30 6 * * *" }
+  ]
+}
+```
+
+Vercel reads `CRON_SECRET` from the project's environment and sends it as a
+Bearer token, so the routes need no change.
+
+</details>
 
 ### Why runs are queued rather than run inline
 
