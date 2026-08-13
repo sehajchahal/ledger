@@ -5,6 +5,11 @@
  * pitch, 22px teeth, a 2px baseline stub for a miss, a 1px baseline underneath.
  * It scales by adding ticks, never by stretching them, which is what keeps it
  * reading as a comb rather than a bar chart.
+ *
+ * Misses are drawn in graphite rather than the border colour. On a near-black
+ * surface a border-coloured stub disappears entirely, and the strip stops
+ * reading as a comb with gaps — it reads as a few bars floating in space, which
+ * loses the whole point of showing absence.
  */
 
 export type Tick = "hit" | "miss" | "drop";
@@ -55,7 +60,7 @@ export function PresenceStrip({
       aria-label={label}
       shapeRendering="crispEdges"
     >
-      <rect x={0} y={BASELINE_Y} width={width} height={1} className="fill-rule" />
+      <rect x={0} y={BASELINE_Y} width={width} height={1} className="fill-graphite/25" />
       {ticks.map((tick, i) => {
         const x = i * TICK_PITCH;
 
@@ -67,7 +72,7 @@ export function PresenceStrip({
               y={BASELINE_Y - STUB_HEIGHT}
               width={TICK_WIDTH}
               height={STUB_HEIGHT}
-              className="fill-rule"
+              className="fill-graphite/55"
             />
           );
         }

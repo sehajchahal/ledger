@@ -41,11 +41,12 @@ export function Button({
     <button
       {...props}
       className={cx(
-        "label inline-flex h-9 items-center px-4 transition-opacity",
+        "label inline-flex h-9 cursor-pointer items-center rounded-[8px] px-4",
+        "transition-colors duration-200",
         "disabled:cursor-not-allowed disabled:opacity-40",
         variant === "primary"
-          ? "bg-ink text-paper hover:opacity-85"
-          : "border border-rule bg-paper text-ink hover:border-ink",
+          ? "bg-accent text-accent-ink hover:opacity-90"
+          : "border border-rule bg-transparent text-ink hover:border-accent",
         className,
       )}
     />
@@ -97,14 +98,19 @@ export function SampleSize({ hits, probes }: { hits: number; probes: number }) {
 
 export function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "signal" | "alert" | "amber" }) {
   const tones = {
-    neutral: "border-rule text-graphite",
-    signal: "border-signal text-signal",
-    alert: "border-alert text-alert",
-    amber: "border-amber text-amber",
+    neutral: "border-rule text-graphite bg-wash/60",
+    signal: "border-signal/40 text-signal bg-signal/10",
+    alert: "border-alert/40 text-alert bg-alert/10",
+    amber: "border-amber/40 text-amber bg-amber/10",
   } as const;
 
   return (
-    <span className={cx("label inline-flex items-center border px-1.5 py-0.5", tones[tone])}>
+    <span
+      className={cx(
+        "label inline-flex items-center rounded-full border px-2 py-0.5",
+        tones[tone],
+      )}
+    >
       {children}
     </span>
   );
@@ -114,15 +120,17 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
 
 export function Table({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cx("overflow-x-auto", className)}>
-      <table className="w-full border-collapse text-left">{children}</table>
+    <div className={cx("panel overflow-hidden", className)}>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left">{children}</table>
+      </div>
     </div>
   );
 }
 
 export function THead({ children }: { children: ReactNode }) {
   return (
-    <thead className="bg-wash">
+    <thead className="bg-wash/60">
       <tr className="border-b border-rule">{children}</tr>
     </thead>
   );
@@ -165,9 +173,9 @@ export function TR({
     <tr
       onClick={onClick}
       className={cx(
-        "group border-b border-rule",
+        "group border-b border-rule transition-colors duration-150 last:border-0",
         onClick && "cursor-pointer",
-        selected && "bg-wash",
+        selected ? "bg-accent-soft/40" : "hover:bg-wash/50",
       )}
     >
       {children}
@@ -208,7 +216,7 @@ export function TD({
  */
 export function EmptyState({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="border border-rule px-6 py-10">
+    <div className="panel px-6 py-10">
       <p className="max-w-prose text-prose-s text-graphite">{children}</p>
       {action ? <div className="mt-3 font-mono text-mono">{action}</div> : null}
     </div>
@@ -221,7 +229,7 @@ export function EmptyState({ children, action }: { children: ReactNode; action?:
  */
 export function DemoDataNotice() {
   return (
-    <div className="mb-8 flex flex-wrap items-center gap-3 border border-amber px-3 py-2">
+    <div className="mb-8 flex flex-wrap items-center gap-3 rounded-[10px] border border-amber/50 bg-amber/5 px-4 py-3">
       <Badge tone="amber">demo data</Badge>
       <p className="text-prose-s text-graphite">
         No answer engine key is set, so these answers were generated locally. They are not a

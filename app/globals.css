@@ -7,77 +7,119 @@
 @source "../lib";
 
 /*
-  Design tokens. These are the whole palette and the whole type scale — see
-  DESIGN.md. If a component needs a value that is not declared here, the
-  component is wrong. No arbitrary color values anywhere in the codebase.
+  Dark is the default and the design's real home; light is a supported guest.
+  Token *names* are stable and semantic — `ink` is always "primary text",
+  whatever colour that happens to be — so components never branch on theme.
+  Swapping the values below re-themes the entire product.
 */
-@theme {
-  /* Color — eight tokens, no ninth. */
-  --color-paper: #fbfaf7;
-  --color-card: #ffffff;
-  --color-wash: #f2f0ea;
-  --color-rule: #e3e0d8;
-  --color-ink: #16150f;
-  --color-graphite: #6b6862;
-  --color-signal: #14713b;
-  --color-alert: #a8321e;
-  --color-amber: #b4740e;
 
-  /* Type families. Display is headlines, prose is read, mono is measured. */
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-prose: var(--font-newsreader), ui-serif, Georgia, serif;
+:root,
+:root[data-theme="dark"] {
+  --paper: #070a12; /* page */
+  --card: #0e1424; /* raised surface */
+  --wash: #131c30; /* inset fill: code blocks, table headers */
+  --rule: #1f2a44; /* hairlines */
+  --ink: #f2f5fa; /* primary text */
+  --graphite: #93a4c4; /* secondary text */
+  --accent: #5b9dff; /* brand blue, primary actions */
+  --accent-ink: #05080f; /* text on accent */
+  --accent-soft: #1a2947; /* accent at low emphasis */
+  --signal: #34d399; /* measured up */
+  --alert: #fb7185; /* measured down */
+  --amber: #fbbf24; /* in progress, estimated */
+  --glow: 91 157 255; /* accent as RGB, for shadows and gradients */
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --paper: #fbfaf7;
+  --card: #ffffff;
+  --wash: #f1f2f6;
+  --rule: #dfe3ec;
+  --ink: #0f172a;
+  --graphite: #55617a; /* 4.5:1 on --paper; not slate-400 */
+  --accent: #1d4ed8;
+  --accent-ink: #ffffff;
+  --accent-soft: #e5edff;
+  --signal: #15803d;
+  --alert: #be123c;
+  --amber: #b45309;
+  --glow: 29 78 216;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-wash: var(--wash);
+  --color-rule: var(--rule);
+  --color-ink: var(--ink);
+  --color-graphite: var(--graphite);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-signal: var(--signal);
+  --color-alert: var(--alert);
+  --color-amber: var(--amber);
+
+  /* Display carries personality, body carries the reading, mono carries
+     anything measured. Same three-role split as before, new voices. */
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-prose: var(--font-worksans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 
-  /* Type scale — only these sizes exist. */
-  --text-display-xl: 72px;
-  --text-display-xl--line-height: 0.95;
-  --text-display-xl--letter-spacing: -0.03em;
-  --text-display-xl--font-weight: 500;
+  --text-display-xl: clamp(2.75rem, 6vw, 4.75rem);
+  --text-display-xl--line-height: 1.02;
+  --text-display-xl--letter-spacing: -0.035em;
+  --text-display-xl--font-weight: 600;
 
-  --text-display-l: 40px;
-  --text-display-l--line-height: 1.05;
-  --text-display-l--letter-spacing: -0.02em;
-  --text-display-l--font-weight: 500;
+  --text-display-l: clamp(2rem, 4vw, 3rem);
+  --text-display-l--line-height: 1.08;
+  --text-display-l--letter-spacing: -0.03em;
+  --text-display-l--font-weight: 600;
 
-  --text-display-m: 24px;
-  --text-display-m--line-height: 1.15;
-  --text-display-m--letter-spacing: -0.01em;
-  --text-display-m--font-weight: 500;
+  --text-display-m: 1.5rem;
+  --text-display-m--line-height: 1.2;
+  --text-display-m--letter-spacing: -0.02em;
+  --text-display-m--font-weight: 600;
 
-  --text-metric: 56px;
+  --text-metric: clamp(3rem, 7vw, 4.25rem);
   --text-metric--line-height: 1;
-  --text-metric--letter-spacing: -0.02em;
-  --text-metric--font-weight: 500;
+  --text-metric--letter-spacing: -0.04em;
+  --text-metric--font-weight: 600;
 
-  --text-prose: 16px;
+  --text-prose: 1rem;
+  --text-prose--line-height: 1.65;
+
+  --text-prose-s: 0.9375rem;
   --text-prose--line-height: 1.6;
 
-  --text-prose-s: 14px;
-  --text-prose-s--line-height: 1.55;
+  --text-mono: 0.8125rem;
+  --text-mono--line-height: 1.45;
 
-  --text-mono: 13px;
-  --text-mono--line-height: 1.4;
-
-  --text-mono-s: 11px;
+  --text-mono-s: 0.6875rem;
   --text-mono-s--line-height: 1.3;
-  --text-mono-s--letter-spacing: 0.08em;
+  --text-mono-s--letter-spacing: 0.09em;
   --text-mono-s--font-weight: 500;
 
-  /* Radius is 0. Everywhere. Hard corners are the look. */
-  --radius-none: 0px;
+  --radius-panel: 14px;
+  --radius-card: 10px;
+  --radius-chip: 999px;
 }
 
 @layer base {
   html {
-    background: var(--color-paper);
-    color: var(--color-ink);
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     font-family: var(--font-prose);
-    font-size: var(--text-prose);
-    line-height: 1.6;
+    font-size: 1rem;
+    line-height: 1.65;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   /* Every numeral in the product aligns on the decimal without effort. */
@@ -89,13 +131,25 @@
 
   /* Focus is always visible and never removed. */
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
+    border-radius: 3px;
   }
 
   ::selection {
-    background: var(--color-ink);
-    color: var(--color-paper);
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  /* Theme swap should feel like a dimmer, not a page reload — but only the
+     properties that are cheap to animate, and never while the user is
+     interacting with something. */
+  html.theme-transition,
+  html.theme-transition * {
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease;
   }
 }
 
@@ -109,6 +163,44 @@
     font-weight: 500;
     text-transform: uppercase;
   }
+
+  /* A hairline that reads on near-black, where a flat border disappears. */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-panel);
+  }
+
+  .panel-glow {
+    box-shadow:
+      0 0 0 1px rgb(var(--glow) / 0.08),
+      0 18px 50px -20px rgb(var(--glow) / 0.28);
+  }
+
+  .text-gradient {
+    background: linear-gradient(100deg, var(--ink) 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Scroll-reveal, written to fail open.
+   *
+   * Content is visible by default. Only once JS has mounted and confirmed it
+   * can drive the animation does `.reveal-ready` appear on <html> and hide the
+   * not-yet-revealed elements. If the script never runs, an observer never
+   * fires, or anything else goes wrong, the page still reads — the worst case
+   * is a missing animation rather than a blank section. */
+  .reveal {
+    transition:
+      opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal-ready .reveal:not([data-shown="true"]) {
+    opacity: 0;
+    transform: translateY(14px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -118,5 +210,11 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal-ready .reveal:not([data-shown="true"]) {
+    opacity: 1;
+    transform: none;
   }
 }

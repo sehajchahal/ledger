@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@/lib/db/schema";
 import type { WorkspaceSummary } from "@/lib/auth/session";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * Fixed 220px left rail. No top bar, no breadcrumbs, no icons in the nav.
@@ -52,14 +53,22 @@ export function Sidebar({
       className="fixed inset-y-0 left-0 flex w-[220px] flex-col border-r border-rule bg-paper"
     >
       <div className="border-b border-rule px-4 py-4">
-        <Link href="/" className="font-display text-prose font-medium">
-          Ledger
-        </Link>
+        <div className="flex items-center justify-between gap-2">
+          <Link href="/" className="flex cursor-pointer items-center gap-2">
+            <span className="flex size-7 items-center justify-center rounded-[7px] bg-accent text-accent-ink">
+              <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+                <path d="M4 18V9M10 18V5M16 18v-6M22 18h-2" />
+              </svg>
+            </span>
+            <span className="font-display text-prose font-semibold">Ledger</span>
+          </Link>
+          <ThemeToggle className="size-8" />
+        </div>
 
         <button
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="mt-3 block w-full text-left"
+          className="mt-4 block w-full cursor-pointer rounded-[8px] border border-rule px-3 py-2 text-left transition-colors duration-200 hover:border-accent"
         >
           <span className="label block text-graphite">{workspaceName}</span>
           <span className="mt-1 flex items-baseline justify-between gap-2">
@@ -117,15 +126,19 @@ export function Sidebar({
           const active = item.href === "" ? pathname === base : pathname.startsWith(href);
 
           return (
-            <li key={item.label} className="relative">
-              {active && <span aria-hidden className="absolute inset-y-0 left-0 w-0.5 bg-ink" />}
+            <li key={item.label} className="px-2">
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`label block px-4 py-2.5 ${
-                  active ? "text-ink" : "text-graphite hover:text-ink"
+                className={`label relative block cursor-pointer rounded-[8px] px-3 py-2.5 transition-colors duration-200 ${
+                  active
+                    ? "bg-accent-soft text-ink"
+                    : "text-graphite hover:bg-wash/60 hover:text-ink"
                 }`}
               >
+                {active ? (
+                  <span aria-hidden className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" />
+                ) : null}
                 {item.label}
               </Link>
             </li>
