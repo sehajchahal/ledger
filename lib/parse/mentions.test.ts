@@ -105,6 +105,51 @@ describe("findMentions", () => {
   });
 });
 
+/**
+ * Shapes real answer engines emit. Everything here was checked against the
+ * matcher before being written down; the emphasis and zero-width cases were
+ * genuine misses, and a miss here is invisible — it understates a mention rate
+ * rather than raising an error.
+ */
+describe("real answer formatting", () => {
+  const NO_ALIAS = [{ name: "Bright Path Learning", aliases: [], isBrand: false }];
+
+  it.each([
+    ["a markdown table cell", "| Provider | Rate |\n| Bright Path Learning | $50 |"],
+    ["a numbered citation", "Bright Path Learning[1] is well reviewed.[2]"],
+    ["a markdown link", "[Bright Path Learning](https://brightpath.ca) is cheaper."],
+    ["a fully bolded name", "**Bright Path Learning** is cheaper."],
+    ["a partially bolded name", "**Bright Path** Learning is cheaper."],
+    ["italics around the name", "_Bright Path Learning_ is cheaper."],
+    ["inline code around the name", "`Bright Path Learning` is cheaper."],
+    ["a heading", "### Bright Path Learning\nStrong reviews."],
+    ["a numbered list item", "1. Bright Path Learning — free assessment"],
+    ["a zero-width space inside the name", "Bright\u200BPath Learning is cheaper."],
+    ["a non-breaking space inside the name", "Bright\u00A0Path Learning is cheaper."],
+  ])("finds a name in %s", (_label, text) => {
+    expect(findMentions(text, NO_ALIAS).map((m) => m.entityName)).toEqual([
+      "Bright Path Learning",
+    ]);
+  });
+
+  it("still does not match a name that only appears inside a URL", () => {
+    expect(findMentions("See https://brightpathlearning.ca/rates", NO_ALIAS)).toEqual([]);
+  });
+
+  it("still does not match a bare domain in prose", () => {
+    expect(findMentions("Their site brightpathlearning.ca lists rates.", NO_ALIAS)).toEqual([]);
+  });
+
+  it("does not let emphasis normalisation invent a match across two names", () => {
+    // "Bright Path" and "Learning Tree" are different companies; the emphasis
+    // between them must not fuse into "Bright Path Learning".
+    const entities = [{ name: "Bright Path Learning", aliases: [], isBrand: false }];
+    expect(findMentions("**Bright Path**. **Learning** Tree is separate.", entities)).toEqual(
+      [],
+    );
+  });
+});
+
 describe("findAllOccurrences", () => {
   it("returns every occurrence, not just the first", () => {
     const text = "Northside Tutoring is good. Northside is well reviewed.";

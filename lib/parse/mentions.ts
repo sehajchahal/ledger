@@ -61,9 +61,22 @@ function surfaceMatcher(surface: string): RegExp | null {
 /**
  * Position-preserving normalisation. Every replacement is one character for one
  * character, so offsets found here are valid offsets into the original text.
+ *
+ * Answer engines emit markdown, and they do not always wrap a whole name in it:
+ * "**Bright Path** Learning" is one company, and matching only the plain form
+ * would silently drop the mention — which shows up as an understated mention
+ * rate rather than as an error. Emphasis markers and zero-width characters are
+ * therefore mapped to spaces, where the token separator already handles them.
  */
 function normalise(text: string): string {
-  return text.replace(/[‘’ʼ]/g, "'").replace(/[“”]/g, '"');
+  return text
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/[“”]/g, '"')
+    // Markdown emphasis and inline code, which can fall inside a name.
+    .replace(/[*_`]/g, " ")
+    // Zero-width space, non-joiner, joiner, and BOM — invisible, and common in
+    // text that has been through a scraper.
+    .replace(/[\u200B\u200C\u200D\uFEFF]/g, " ");
 }
 
 /**

@@ -1,5 +1,5 @@
 import "../lib/env";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { client, db } from "../lib/db";
 import { mentions, runs, answers } from "../lib/db/schema";
 import { parseRun } from "../lib/parse/mentions";
@@ -10,7 +10,14 @@ async function main() {
   const runId = process.argv[2];
   const [run] = runId
     ? await db.select().from(runs).where(eq(runs.id, runId)).limit(1)
-    : await db.select().from(runs).where(eq(runs.status, "complete")).orderBy(desc(runs.startedAt)).limit(1);
+    // Only full runs. A verification re-check asks one prompt, so reporting a
+      // "visibility" for it would be meaningless.
+      : await db
+          .select()
+          .from(runs)
+          .where(and(eq(runs.status, "complete"), eq(runs.kind, "full")))
+          .orderBy(desc(runs.startedAt))
+          .limit(1);
   if (!run) throw new Error("no completed run found");
 
   // Re-parsing is idempotent: clear this run's mentions first.
