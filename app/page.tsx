@@ -4,8 +4,10 @@ import { BrandCheck } from "@/components/landing/brand-check";
 import { FixTypes } from "@/components/landing/fix-types";
 import { HeroAnswer } from "@/components/landing/hero-answer";
 import { Pricing } from "@/components/landing/pricing";
+import { ScrollQuestions } from "@/components/landing/scroll-questions";
 import { Steps } from "@/components/landing/steps";
 import { Reveal } from "@/components/reveal";
+import { ScrollType } from "@/components/scroll-type";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { db } from "@/lib/db";
 import { brands } from "@/lib/db/schema";
@@ -121,11 +123,14 @@ export default async function Landing() {
           </div>
         </Reveal>
 
+        {/* ── The questions ────────────────────────────────────────────── */}
+        <ScrollQuestions />
+
         {/* ── The check ────────────────────────────────────────────────── */}
         <section id="check" className="scroll-mt-8 border-t border-rule py-16">
           <Reveal>
             <h2 className="font-display text-display-l mb-3 text-balance">
-              Try it on your own website, right now.
+              <ScrollType text="Try it on your own website, right now." />
             </h2>
             <p className="mb-8 max-w-prose text-prose text-graphite">
               Type your address. We read your site, work out what you sell, write three
@@ -141,7 +146,7 @@ export default async function Landing() {
         <section id="how" className="scroll-mt-8 border-t border-rule py-16">
           <Reveal>
             <h2 className="font-display text-display-l mb-3 text-balance">
-              You do nothing. That is the product.
+              <ScrollType text="You do nothing. That is the product." />
             </h2>
             <p className="mb-10 max-w-prose text-prose text-graphite">
               There is no dashboard to learn and no keywords to research. Our AI does the
@@ -156,7 +161,7 @@ export default async function Landing() {
         <section className="border-t border-rule py-16">
           <Reveal>
             <h2 className="font-display text-display-l mb-3 text-balance">
-              And we hand you the fix, not a to-do list.
+              <ScrollType text="And we hand you the fix, not a to-do list." />
             </h2>
             <p className="mb-10 max-w-prose text-prose text-graphite">
               Every gap becomes one specific, finished change. Three kinds, depending on
@@ -170,7 +175,7 @@ export default async function Landing() {
         <section className="border-t border-rule py-16">
           <Reveal>
             <h2 className="font-display text-display-l mb-3 text-balance">
-              Other tools stop at the diagnosis.
+              <ScrollType text="Other tools stop at the diagnosis." />
             </h2>
             <p className="mb-8 max-w-prose text-prose text-graphite">
               Eleven products will tell you that you were mentioned 38 times. None of them
@@ -252,7 +257,7 @@ export default async function Landing() {
         {/* ── Pricing ──────────────────────────────────────────────────── */}
         <section id="pricing" className="scroll-mt-8 border-t border-rule py-16">
           <Reveal>
-            <h2 className="font-display text-display-l mb-3 text-balance">Pricing</h2>
+            <h2 className="font-display text-display-l mb-3 text-balance"><ScrollType text="Pricing" /></h2>
             <p className="mb-10 max-w-prose text-prose text-graphite">
               Billed monthly, cancel whenever. Every plan includes the part that matters —
               re-checking whether the fix worked.
@@ -265,7 +270,7 @@ export default async function Landing() {
         <Reveal as="section" className="border-t border-rule py-16">
           <div className="panel panel-glow p-8 text-center sm:p-12">
             <h2 className="font-display text-display-l mx-auto mb-4 max-w-[20ch] text-balance">
-              Find out where you stand in fifteen seconds.
+              <ScrollType text="Find out where you stand in fifteen seconds." />
             </h2>
             <p className="mx-auto mb-8 max-w-prose text-prose text-graphite">
               No email, no account, no call with sales. Type your website and see what the

@@ -173,7 +173,12 @@ Motion exists to show causality — this appeared *because* you scrolled here, t
 
 - Micro-interactions: 200ms. Scroll reveals: 480ms on a `cubic-bezier(0.22, 1, 0.36, 1)`.
   Theme swap: 220ms, and only on `background-color`, `border-color`, `color`.
-- Only `opacity` and `transform` are animated. Never `width`, `height`, `top`, or `left`.
+- Only `opacity`, `transform` and `filter` are animated. Never `width`, `height`, `top`, or
+  `left`. `filter` is permitted solely as depth of field on the questions band, at a small
+  radius and over a handful of elements — a heavy blur on type reads as a rendering fault,
+  and blurring a long list is a real cost on a weak GPU. Note that once `filter` is in a
+  scroll-driven keyframe, Chrome runs the whole animation off the main thread and
+  `getComputedStyle` stops reporting the animated values. Verify that effect by eye.
 - Stagger within a group stays under ~300ms total. Past that it reads as a slow page.
 - Hover never changes layout. Colour, border, and shadow only — no `scale` that nudges
   neighbours.

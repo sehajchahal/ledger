@@ -73,7 +73,7 @@ export function Steps() {
   return (
     <ol className="grid gap-5 md:grid-cols-2">
       {STEPS.map((step, i) => (
-        <Reveal as="li" key={step.n} delay={i * 70}>
+        <Reveal as="li" key={step.n} delay={i * 90}>
           <StepCard step={step} />
         </Reveal>
       ))}

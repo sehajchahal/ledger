@@ -7,17 +7,60 @@ import { useEffect, useRef, type ReactNode } from "react";
  *
  * Deliberately fails open. The CSS shows content by default; the `reveal-ready`
  * class that hides un-revealed elements is only added once this component has
- * mounted, and every element additionally reveals itself on a timer whether or
- * not its observer ever fires.
+ * mounted, so if the script never runs the page still reads.
  *
- * That redundancy is the point. An earlier version hid content up front and
- * relied on an IntersectionObserver to bring it back, which meant any failure
- * in that one mechanism left whole sections of the page permanently blank —
- * a far worse outcome than a missing animation.
+ * One shared, frame-throttled sweep drives every instance. An earlier version
+ * used an IntersectionObserver per element plus a 1400ms timer that showed the
+ * element whether or not the observer had fired. The timer was there because
+ * the observer had once failed outright and left whole sections blank — but it
+ * meant that a second and a half after load, every reveal on the page had run,
+ * including ones several thousand pixels down. Scrolling to them showed nothing
+ * because the animation had already finished. This version keeps the fail-open
+ * property without that: the fallback is geometry, checked on scroll, so an
+ * element is only ever revealed when it is actually in view.
  */
 
-/** Longest a element may stay hidden waiting for its observer. */
-const FAILSAFE_MS = 1400;
+/** Reveal once the element's top edge is this far up the viewport. */
+const TRIGGER_RATIO = 0.92;
+
+const pending = new Set<HTMLElement>();
+let listening = false;
+let frame = 0;
+
+function sweep() {
+  frame = 0;
+  const limit = window.innerHeight * TRIGGER_RATIO;
+
+  for (const element of pending) {
+    // `top < limit` also catches anything already scrolled past, so jumping to
+    // an anchor never strands an element in the hidden state.
+    if (element.getBoundingClientRect().top < limit) {
+      element.setAttribute("data-shown", "true");
+      pending.delete(element);
+    }
+  }
+
+  if (pending.size === 0) stopListening();
+}
+
+function schedule() {
+  if (frame) return;
+  frame = requestAnimationFrame(sweep);
+}
+
+function startListening() {
+  if (listening) return;
+  listening = true;
+  window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("resize", schedule);
+}
+
+function stopListening() {
+  if (!listening) return;
+  listening = false;
+  window.removeEventListener("scroll", schedule);
+  window.removeEventListener("resize", schedule);
+}
 
 export function Reveal({
   children,
@@ -37,43 +80,28 @@ export function Reveal({
     const element = ref.current;
     if (!element) return;
 
-    const show = () => {
-      element.style.transitionDelay = `${delay}ms`;
-      element.setAttribute("data-shown", "true");
-    };
-
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      show();
+      element.setAttribute("data-shown", "true");
       return;
     }
 
     // Arm the hidden state only now that JS is definitely running.
     document.documentElement.classList.add("reveal-ready");
+    element.style.transitionDelay = `${delay}ms`;
 
-    // Anything already on screen at mount should not wait for a scroll event.
-    const rect = element.getBoundingClientRect();
-    if (rect.top < window.innerHeight && rect.bottom > 0) {
-      show();
+    // Resolve above-the-fold content synchronously, in the same tick that armed
+    // the hiding rule. Deferring to the next frame would flash it hidden.
+    if (element.getBoundingClientRect().top < window.innerHeight * TRIGGER_RATIO) {
+      element.setAttribute("data-shown", "true");
       return;
     }
 
-    const failsafe = window.setTimeout(show, FAILSAFE_MS);
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        window.clearTimeout(failsafe);
-        show();
-        observer.disconnect();
-      },
-      { threshold: 0, rootMargin: "0px 0px -40px 0px" },
-    );
-
-    observer.observe(element);
+    pending.add(element);
+    startListening();
 
     return () => {
-      window.clearTimeout(failsafe);
-      observer.disconnect();
+      pending.delete(element);
+      if (pending.size === 0) stopListening();
     };
   }, [delay]);
 

@@ -201,6 +201,170 @@
     opacity: 0;
     transform: translateY(14px);
   }
+
+  /* Scroll-linked typing. The ghost holds the final size so nothing below moves
+     while the line fills in; the live copy is laid over it. */
+  .type-wrap {
+    position: relative;
+    display: block;
+  }
+
+  .type-ghost {
+    visibility: hidden;
+  }
+
+  .type-live {
+    position: absolute;
+    inset: 0;
+    /* Greedy wrapping, even under a balanced heading. `text-wrap: balance`
+       re-chooses its break points every time the string changes length, so a
+       balanced heading would visibly re-flow on almost every keystroke. Greedy
+       breaks are stable: adding a character only ever affects the last line.
+       The ghost keeps the balanced wrap, and since balancing redistributes a
+       line set rather than changing how many lines there are, the reserved
+       height still matches. */
+    text-wrap: normal;
+  }
+
+  /* The caret. Accent rather than currentColor: this line is the one place the
+     product shows a machine writing, and the caret is the tell. */
+  .type-live::after {
+    content: "";
+    display: inline-block;
+    width: 0.55ch;
+    height: 1em;
+    margin-left: 0.08em;
+    vertical-align: -0.12em;
+    background: var(--accent);
+    animation: caret-blink 900ms steps(1, end) infinite;
+  }
+
+  /* Once the sentence is complete the caret has nothing left to say. */
+  .type-wrap.is-done .type-live::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  /* Scroll-driven emphasis: whichever child is nearest the middle of the
+   * viewport is the one lit.
+   *
+   * Driven by the browser's own `view()` timeline. No library, no JS, no
+   * observer — which means nothing to fail at runtime and nothing to ship to
+   * the client. Where scroll-driven animations are unsupported the list simply
+   * renders legible at rest, the same fail-open posture as `.reveal`.
+   *
+   * Colour travels ink -> accent and back. It does not travel through hue,
+   * because a hue sweep is a rainbow and the palette is one blue. */
+  .scroll-focus > * {
+    opacity: 1;
+  }
+
+  @supports (animation-timeline: view()) {
+    /* Feather the band into the page. Without this the dimmed lines stop at a
+       hard edge and read as clipped content rather than as depth of field. */
+    .scroll-focus {
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 22%,
+        black 78%,
+        transparent 100%
+      );
+    }
+
+    .scroll-focus > * {
+      animation: scroll-focus linear both;
+      animation-timeline: view();
+      animation-range: cover 36% cover 64%;
+    }
+
+    /* The band takes the screen for the length of its own scroll and then gives
+     * it back. `.scroll-scrim` is a full-bleed wash of the page colour that
+     * covers everything else; `.scroll-zoom` pushes the content forward into it.
+     *
+     * These are siblings, and the scrim animates opacity ONLY, on purpose. An
+     * animated `transform` (or filter, or will-change) on an ancestor makes it
+     * the containing block for `position: fixed` descendants, at which point the
+     * scrim would size itself to the section instead of the viewport and the
+     * effect would collapse. Opacity does not do that. */
+    .scroll-scrim {
+      animation: scroll-scrim linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+
+    .scroll-zoom {
+      animation: scroll-zoom linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes scroll-scrim {
+  0%,
+  6% {
+    opacity: 0;
+  }
+  22%,
+  78% {
+    opacity: 1;
+  }
+  94%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes scroll-zoom {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  78% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* Blur is doing the real work here: dimming alone still lets the eye read every
+   line at once, which defeats the point. Out of focus and out of the way is one
+   gesture. Radius stays small — a heavy blur on type reads as a rendering bug. */
+@keyframes scroll-focus {
+  0% {
+    opacity: 0.28;
+    color: var(--ink);
+    filter: blur(5px);
+  }
+  50% {
+    opacity: 1;
+    color: var(--accent);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0.28;
+    color: var(--ink);
+    filter: blur(5px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -216,5 +380,37 @@
   .reveal-ready .reveal:not([data-shown="true"]) {
     opacity: 1;
     transform: none;
+  }
+
+  /* A scroll-linked animation has no duration to zero out, so it has to be
+     switched off by name rather than by the blanket rule above. The mask goes
+     with it — a fade the reader cannot scroll through is just missing text. */
+  .scroll-focus {
+    mask-image: none !important;
+  }
+
+  .scroll-focus > * {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
+  /* The scrim is only ever a focus device. With motion off it must not exist,
+     or it is a sheet of paper covering the page. */
+  .scroll-scrim {
+    display: none !important;
+  }
+
+  .scroll-zoom {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* The line is written out in full by the component; a caret that never moves
+     is just a stray block of colour at the end of a sentence. */
+  .type-live::after {
+    animation: none !important;
+    opacity: 0 !important;
   }
 }

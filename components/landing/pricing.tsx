@@ -69,7 +69,7 @@ export function Pricing() {
     <>
       <div className="grid items-start gap-5 lg:grid-cols-3">
         {PLANS.map((plan, i) => (
-          <Reveal key={plan.name} delay={i * 70}>
+          <Reveal key={plan.name} delay={i * 90}>
             <PlanCard plan={plan} />
           </Reveal>
         ))}

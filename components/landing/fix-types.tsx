@@ -49,7 +49,7 @@ export function FixTypes() {
   return (
     <div className="grid gap-5 md:grid-cols-3">
       {FIXES.map((fix, i) => (
-        <Reveal as="article" key={fix.tag} delay={i * 70}>
+        <Reveal as="article" key={fix.tag} delay={i * 90}>
           <div className="panel flex h-full flex-col p-6 transition-colors duration-200 hover:border-accent/50">
             <div className="mb-4 flex items-center gap-3">
               <span className="flex size-9 items-center justify-center rounded-[10px] bg-accent-soft text-accent">
